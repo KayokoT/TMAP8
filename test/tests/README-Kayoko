@@ -1,0 +1,49 @@
+The files in the folder "copper-tungsten-system" are the most relevant, ignore everything else as they were used to 
+learn MOOSE/TMAP8 and/or adapt verification cases, which may use irrelevant parameters.
+
+You will find the following in copper-tungsten-system:
+    Cu-W    
+        folder for a bilayer system where Cu faces the H source and the H recombine and diffuse out of W
+        includes trapping and no trapping case
+    Cu-W-Ar
+        folder for a trilayer system with Cu-W-Ar, no trapping, where H goes from Cu to Ar. 
+        We ended up removing argon from consideration because we realized analyzing permeation flux
+        from the W was sufficient.
+    individual-layers-no-trapping
+        folder that includes only W and Cu, no trapping, and diffusion front checks
+    val-CVD-W-Cu
+        folder that compares against the CVD experiments run in Sun 2025. This includes three input files: one with only W, 
+        one with only Cu, and one with the two-layer system with W on the H source side. 
+        In the .params file you can see all the temperatures for which each case is run. 
+        The comparison file compares the experimental permeation curves to the simulated ones.
+    val-W-Eurofer
+        folder for an abandoned validation case as the experiment mainly reflects the impact of changing surface kinetics
+        rather than pressure as was initially believed.
+    W-Cu
+        folder that models the bilayer system with W facing the source. It includes the no trapping case,
+        as well as various trapped cases (1 in Cu, 1 in W, 2 in W, and 3 in the whole system)
+    W-Cu-W
+        folder that models a tungsten-copper-tungsten system as expected to reflect the experimental case.
+        The comparison.py file was added last minute and may not be flawless, though it will have to be changed anyways
+        to compare it to the experimental data. Val-CVD-W-Cu may have some reusable code (ie sorting by temperature) that would make this faster.
+    Cu_lam_fit.py  
+        used to fit the temperature-dependent lattice constant for copper
+
+## EXTRA NOTES
+
+# RUN_ID
+For easier comparison between simulation runs where different numerical or physical parameters may have changed, I made the simulation files output with a RUN_ID suffix, which you specify when running the code, i.e.: 
+tmap8-opt -i filename.i RUN_ID = run01
+In the comparison files, in the ‘legend’ array at the top, you can then specify what each run corresponds to. This method works even if you aren’t comparing anything; it’d just plot one run. Conversely, in val-CVD-W-Cu, the files are organized based on temperature, which may be more applicable when comparing to experimental data.
+# CONVERGENCE ISSUES
+Most convergence issues can be fixed solely by loosening nl_rel_tol and nl_abs_tol or making dtmax smaller, so if you run into failing solves,
+I’d suggest tuning those first. A smaller dtmax is typically need at higher temperatures. Shrinking dtmax also improves the conservation of mass.
+# STEADY STATE DETECTION
+The simulation automatically ends when steady state is detected.
+
+
+Lastly, I tried to make the plotting as generalizable as possible, but there may be cases where I manually entered the axes so those may need to be tweaked.
+
+
+
+ 

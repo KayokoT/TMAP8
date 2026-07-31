@@ -1,0 +1,45 @@
+# Parameters from Sun et al, "Deuterium plasma-driven permeation in chemical vapor deposition tungsten-copper composite", 
+# unless otherwise noted
+
+# CONSTANTS
+KB_EV = 8.617333262e-5    #eV/K Boltzmann constant
+# --------------------------------------------------------------------------------------
+# GEOMETRY 
+W_only_thickness ='${units 100e-6 m -> mum}' #standalone W system
+Cu_only_thickness = '${units 172e-6 m -> mum}' #standalone Cu system
+# W/Cu system measurements
+W_thickness = '${units 10e-6 m -> mum}' 
+Cu_thickness = '${units 175e-6 m -> mum}'
+Cu_entry_thickness = '${units 65e-6 m -> mum}'
+# --------------------------------------------------------------------------------------
+# TEMPERATURE
+T = 741 #K
+#Cu only: 587, 620, 700, 741, 742 K
+#W only: 643, 741, 742, 790 K
+#W-Cu: 660, 700, 741 K
+# --------------------------------------------------------------------------------------
+# HYDROGEN DIFFUSION AND TRAPPING IN TUNGSTEN
+W_D = ${units ${fparse 1.9e-7*exp(-0.77/KB_EV/T)} m^2/s -> mum^2/s} #mum^2/s
+W_S = ${fparse 1e-18 * 1.87e24 * exp(-1.04/KB_EV/T)} #at/m^3/sqrt(Pa) -> at/mum^3/sqrt(Pa), solubility
+# ---- W Recombination Coefficient ----
+W_kr = ${fparse 1e24 * 4.5e-47 * exp(2.3/KB_EV/T)} #m^4/s -> mum^4/s
+# --------------------------------------------------------------------------------------
+# CU ENTRY REGION
+Cu_entry_S = ${fparse 1e-18 * 1.87e24 * exp(-0.60/KB_EV/T)} #at/m^3/sqrt(Pa) -> at/mum^3/sqrt(Pa), solubility
+# --------------------------------------------------------------------------------------
+# HYDROGEN DIFFUSION AND TRAPPING IN COPPER
+Cu_D = ${units ${fparse 1.3e-8 * exp(-0.27/KB_EV/T)} m^2/s -> mum^2/s} #diffusivity
+Cu_S = ${fparse 1e-18 * 3.14e24 * exp(-0.57/KB_EV/T)} #at/m^3/sqrt(Pa) -> at/mum^3/sqrt(Pa), solubility
+Cu_kr = ${fparse 1e24 * 3.8e-38 * exp(1.58/KB_EV/T)} #m^4/s -> mum^4/s, recombination coefficient
+
+# recombination coefficient for W/Cu system
+# calculated using W-kr-calculation.py with some minor manual tweaks to improve fit
+# according to their derivation assuming the recombination limited regime,
+# Jp = J0 - KC^2, not 2KC^2 as seen in other cases
+WCu_kr = ${fparse 1e24 * 1.802e-38 * exp(1.078/KB_EV/T)} #m^4/s -> mum^4/s
+# ------------ PLASMA FLUX --------------------------------------------------------------------------
+Cu_J0_coef = 0.9
+W_J0_coef = 1
+J0 = ${fparse 3e20 * 1e-12}   # D/m^2/s -> D/mum^2/s
+# ------------ IMPLANTATION DEPTH ---------------------------
+# W_implantation_depth = ${units 1.6e-9 m -> mum}

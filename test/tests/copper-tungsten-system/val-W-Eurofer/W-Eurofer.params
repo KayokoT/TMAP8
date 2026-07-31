@@ -1,0 +1,46 @@
+# Parameters to validate with Zajec paper: 10micron thick tungsten layers on Eurofer steel substrate
+
+# CONSTANTS
+#kb_eV = 8.617333262e-5    #eV/K Boltzmann constant
+# kb_J = 1.38e-23 #J/K Boltzmann constant
+# nu = 1e13              #s^-1, Debye frequency
+# R = 8.31446261815324   #J/molK, gas constant
+# Na = 6.02214076e23     #Avogadro's number
+
+# GEOMETRY 
+W_thickness = '${units 10 mum -> m}'
+Euro_thickness = '${units 0.5 mm -> m}'
+
+# TEMPERATURE AND PRESSURE
+T = ${fparse 400 + 273} #K
+pressure = ${units 101.4 kPa -> Pa} #3 cases: 107.6kPa, 101.4 kPa, and 95.3 kPa
+
+# TEMP DEPENDENT LATTICE CONSTANT
+# W_lam = '${fparse 1e-10 * (3.164 + 2.149e-5*T + 1.939e-9*T^2 + 5.217e-13*T^3)}' #m, lattice constant #[14]
+#W_lattice_density = '${units ${fparse 2/(W_lam^3)} at/m^3 -> at/mum^3}' #at/mum^3, since BCC, so 2 atoms per unit cell
+
+#Euro_lam = '${fparse 1e-10 *(-7.348e-12*T^3 + 3.187e-8*T^2 + 3.901e-5*T + 3.601)}'  #m, lattice constant, fitted to data from [15]
+#Euro_lattice_density = '${units ${fparse 4/(Euro_lam^3)} at/m^3 -> at/mum^3}'       #since FCC, so 4 atoms per unit cell
+
+# HYDROGEN DIFFUSION AND TRAPPING IN TUNGSTEN
+W_D = '${units 2.8e-14 m^2/s}' #diffusivity from paper
+# W_Ed = 0.13 #diffusion activation energy [1]
+# ---- Solubility ----
+W_S = ${fparse 2* 2.5} #mol H2/m^3/sqrtPa from paper -> mol H/m^3/sqrtPa
+
+# ---- Trapping ----
+#Trap 1
+#W_trapping_energy_eV_1 = 0.85                                    #trap energy in eV [13]
+#W_trapping_energy_1 = '${units ${fparse W_trapping_energy_eV_1/kb_eV} K}'          #trap energy in K
+#W_trapping_prefactor_1 = '${units ${fparse ${W_D_in_meters}/W_lam^2} 1/s}'      #Appendix B [2]
+#W_detrapping_energy_eV_1 = ${fparse W_trapping_energy_eV_1 + W_Ed} #eV [12]
+#W_detrapping_energy_1 = '${units ${fparse W_detrapping_energy_eV_1/kb_eV} K}' 
+#W_detrapping_prefactor_1 = '${units ${nu} 1/s}'
+#W_trapping_site_fraction_1 = 6e-3 #-, trapping site fraction from paper
+
+# --------------------------------------------------------------------------------------
+# HYDROGEN DIFFUSION AND TRAPPING IN EUROFER
+Euro_D = '${units 6.4e-9 m^2/s}' #diffusivity from paper
+
+# ---- Solubility ---- 
+Euro_S = ${fparse 2*2.6e-3} #molH2/m^3/sqrtPa from paper -> mol H/m^3/sqrt(Pa)

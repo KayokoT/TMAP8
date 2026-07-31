@@ -1,0 +1,59 @@
+# Parameters to solve system of copper, tungsten, and argon
+# No trapping
+
+# CONSTANTS
+KB_EV = 8.617333262e-5      #eV/K Boltzmann constant
+R = 8.31446261815324        #J/molK, gas constant
+NA = 6.02214076e23          #Avogadro's number
+
+# --------------------------------------------------------------------------------------
+# GEOMETRY 
+W_thickness = '${units 25e-6 m -> mum}'
+Cu_thickness = '${units 50e-6 m -> mum}'
+
+# --------------------------------------------------------------------------------------
+# TEMPERATURE AND PRESSURE
+T = 1200 #K
+pressure = ${units 101325 Pa}
+
+# --------------------------------------------------------------------------------------
+# TEMP DEPENDENT LATTICE CONSTANT
+W_lam = '${fparse 1e-10 * (3.164 + 2.149e-5*T + 1.939e-9*T^2 + 5.217e-13*T^3)}' # m, lattice constant #[1]
+# --------------------------------------------------------------------------------------
+# HYDROGEN DIFFUSION IN TUNGSTEN
+# ---- Diffusivity ---- [3]
+W_D0 = 7.44e-8                  # m^2/s, diffusivity pre-exponential
+W_Ed = 0.13                     # eV, diffusion activation energy
+W_D = '${units ${fparse W_D0*exp(-W_Ed/(KB_EV*T))} m^2/s -> mum^2/s}' #mum^2/s, diffusivity
+
+# ---- Solubility ---- [3]
+W_S0_atm = 9.9e-3       # H atoms/W atoms/atm^0.5, solubility pre-exponential
+W_S0 = '${fparse 1e-18 * W_S0_atm * (2/(W_lam^3)) / sqrt(101325)}' # Hat/Wat/atm^0.5 -> at/mum^3/Pa^0.5, solubility pre-exponential
+W_Hsoln = 1.25          # eV, heat of solution
+W_S = '${fparse ${W_S0}*exp(-W_Hsoln/(KB_EV*T))}' # at/mum^3/Pa^0.5, solubility
+
+# --------------------------------------------------------------------------------------
+# HYDROGEN DIFFUSION IN COPPER
+# ---- Diffusivity ---- [4]
+Cu_D0 = 1.74e-6                    # m^2/s, diffusivity pre-exponential
+Cu_Ed = 42000                      # J/mol, activation energy/migration energy barrier
+Cu_D = '${units ${fparse Cu_D0*exp(-Cu_Ed/(R*T))} m^2/s -> mum^2/s}' #diffusivity
+
+# ---- Solubility ---- [4]
+Cu_P0 = 4.5e-4          # permeability pre-exponential, mole H2/m/s/atm^0.5
+# Cu_P_Ea = 84320       # J/mol, permeability activation energy
+Cu_S0_atm = ${fparse 2 * Cu_P0/Cu_D0} # H moles/m^3/atm^0.5, solubility pre-exponential
+Cu_S0 = ${fparse 1e-18 * NA * ${Cu_S0_atm} / sqrt(101325)} # H moles/m^3/atm^0.5 -> at/mum^3/Pa^0.5, solubility pre-exponential
+Cu_Hsoln = 42320        #J/mol, heat of solution, Cu_P_Ea - Cu_Ed
+Cu_S = '${fparse ${Cu_S0}*exp(-Cu_Hsoln/(R*T))}' # at/mum^3/Pa^0.5, solubility
+# --------------------------------------------------------------------------------------
+# HYDROGEN DIFFUSION IN ARGON
+Ar_D = ${units ${fparse 3.49e-5 * T^1.773} cm^2/s -> mum^2/s}    # diffusivity pre-exponential [5] at 1atm
+
+# --------------------------------------------------------------------------------------
+# REFERENCES
+# [1] Y. Xingang and G. Fujun, "Molecular dynamics study on the diffusion properties of hydrogen atoms in bulk tungsten," Plasma Sci. Technol., vol. 15, no. 7, p. 710, 2013, doi: 10.1088/1009-0630/15/7/19.
+# [2] K. Wang and R. R. Reeber, "Thermal expansion of copper," High Temp. Mater. Sci., vol. 35, no. 2, 1996.
+# [3] X. Kong et al., "First-principles calculations of hydrogen solution and diffusion in tungsten: Temperature and defect-trapping effects," Acta Mater., vol. 84, pp. 426–435, 2015, doi: 10.1016/j.actamat.2014.10.039.
+# [4] H. Magnusson and K. Frisk, "Diffusion, permeation and solubility of hydrogen in copper," J. Phase Equilib. Diffus., vol. 38, no. 1, pp. 65–69, 2017, doi: 10.1007/s11669-017-0518-y.
+# [5] Westenberg, A. A., and Frazier, G. "Molecular Diffusion Studies in Gases at High Temperature. V. Results for the H₂–Ar System." Journal of Chemical Physics, vol. 36, pp. 3499–3500, 1962. https://doi.org/10.1063/1.1732490

@@ -1,0 +1,115 @@
+# Parameters to solve systems with tungsten and copper
+
+# CONSTANTS
+KB_EV = 8.617333262e-5      #eV/K Boltzmann constant
+NU = 1e13                   #s^-1, Debye frequency
+R = 8.31446261815324        #J/molK, gas constant
+NA = 6.02214076e23          #Avogadro's number
+
+# --------------------------------------------------------------------------------------
+# GEOMETRY 
+W_thickness = '${units 25e-6 m -> mum}'
+Cu_thickness = '${units 100e-6 m -> mum}'
+
+# --------------------------------------------------------------------------------------
+# TEMPERATURE AND PRESSURE
+T = 900 #K
+pressure = ${units 101325 Pa}
+
+# --------------------------------------------------------------------------------------
+# TEMP DEPENDENT LATTICE CONSTANT
+W_lam = '${fparse 1e-10 * (3.164 + 2.149e-5*T + 1.939e-9*T^2 + 5.217e-13*T^3)}' # m, lattice constant #[1]
+W_lattice_density = '${units ${fparse 2/(W_lam^3)} at/m^3 -> at/mum^3}'         # at/mum^3, since BCC, so 2 atoms per unit cell
+
+Cu_lam = '${fparse 1e-10 *(-7.348e-12*T^3 + 3.187e-8*T^2 + 3.901e-5*T + 3.601)}'  # m, lattice constant, fitted to data [2] using Cu_lam_fit.py
+Cu_lattice_density = '${units ${fparse 4/(Cu_lam^3)} at/m^3 -> at/mum^3}'         #at/mum^3 since FCC, so 4 atoms per unit cell
+
+# --------------------------------------------------------------------------------------
+# HYDROGEN DIFFUSION AND TRAPPING IN TUNGSTEN
+# ---- Diffusivity ---- [3]
+W_D0 = 7.44e-8                  # m^2/s, diffusivity pre-exponential
+W_Ed = 0.13                     # eV, diffusion activation energy
+W_D = '${units ${fparse W_D0*exp(-W_Ed/(KB_EV*T))} m^2/s -> mum^2/s}' #mum^2/s, diffusivity
+
+# ---- Solubility ---- [3]
+W_S0_atm = 9.9e-3       # H atoms/W atoms/atm^0.5, solubility pre-exponential
+W_S0 = '${fparse 1e-18 * W_S0_atm * (2/(W_lam^3)) / sqrt(101325)}' # Hat/Wat/atm^0.5 -> at/mum^3/Pa^0.5, solubility pre-exponential
+W_Hsoln = 1.25          # eV, heat of solution
+W_S = '${fparse ${W_S0}*exp(-W_Hsoln/(KB_EV*T))}' # at/mum^3/Pa^0.5, solubility
+
+# ---- W Recombination Coefficient ---- 
+# W_kr = ${fparse 3.2e-15 * exp(-1.16/KB_EV/T) * 1e24} # m^4/s -> mum^4/s, recombination coefficient [4]
+
+# ---- Trapping ----
+# natural traps are 0.5-0.85, vacancies are 1.2-1.5 [5]
+# parameters for all traps
+W_nu0 = ${fparse W_D0/W_lam^2} # jump rate prefactor [6,7]
+W_migration_energy = '${fparse W_Ed/KB_EV}' # eV -> K, diffusion activation energy
+W_trapping_prefactor = '${units ${W_nu0} 1/s}' #[6,9]
+W_detrapping_prefactor = '${units ${NU} 1/s}' #[6,8]
+
+#trap 1 - natural trap
+# W_trap_binding_energy_eV_1 =  # trap energy in eV                            
+# W_detrapping_energy_eV_1 = ${fparse W_trap_binding_energy_eV_1 + W_Ed} # eV
+W_detrapping_energy_eV_1 = 0.85 # eV, source directly lists detrapping energy [10]
+W_detrapping_energy_1 = '${units ${fparse W_detrapping_energy_eV_1/KB_EV} K}' # eV -> K
+W_trapping_site_fraction_1 = 0.01 # --, trapping site fraction [10]
+
+#Trap 2 - vacancy
+# W_trap_binding_energy_eV_2 = # vacancies trap energy in eV
+# W_detrapping_energy_eV_2 = ${fparse W_trap_binding_energy_eV_2 + W_Ed} # eV
+W_detrapping_energy_eV_2 = 1.4 #eV, source directly lists detrapping energy [10]
+W_detrapping_energy_2 = '${units ${fparse W_detrapping_energy_eV_2/KB_EV} K}' # eV -> K
+W_trapping_site_fraction_2 = 0.07 # --, trapping site fraction [10]
+
+# --------------------------------------------------------------------------------------
+# HYDROGEN DIFFUSION AND TRAPPING IN COPPER
+# ---- Diffusivity ---- [11]
+Cu_D0 = 1.74e-6                    # m^2/s, diffusivity pre-exponential
+Cu_Ed = 42000                      # J/mol, activation energy/migration energy barrier
+Cu_Ed_eV = ${fparse Cu_Ed * KB_EV/R} # eV, activation energy
+Cu_D = '${units ${fparse Cu_D0*exp(-Cu_Ed/(R*T))} m^2/s -> mum^2/s}' #diffusivity
+
+# ---- Solubility ---- [11]
+Cu_P0 = 4.5e-4          # permeability pre-exponential, mole H2/m/s/atm^0.5
+# Cu_P_Ea = 84320       # J/mol, permeability activation energy
+Cu_S0_atm = ${fparse 2 * Cu_P0/Cu_D0} # H moles/m^3/atm^0.5, solubility pre-exponential
+Cu_S0 = ${fparse 1e-18 * NA * ${Cu_S0_atm} / sqrt(101325)} # H moles/m^3/atm^0.5 -> at/mum^3/Pa^0.5, solubility pre-exponential
+Cu_Hsoln = 42320        #J/mol, heat of solution, Cu_P_Ea - Cu_Ed
+Cu_S = '${fparse ${Cu_S0}*exp(-Cu_Hsoln/(R*T))}' # at/mum^3/Pa^0.5, solubility
+
+# ---- Cu Recombination/Dissociation Coefficients ---- [12]
+phi = ${fparse 1e-8 * (1/133.322) * 3.5e22/(2*T)^0.5} # h2 molecules/cm^2/s/Torr -> h2 molecules/mum^2/s/Pa
+s = ${fparse 0.075*exp(-49200/R/T)} # --, sticking coefficient [13]
+Cu_kr = ${fparse s*phi/Cu_S0^2} #h2 molecules * mum^4/at^2/s, recombination coefficient
+# Cu_kd = ${fparse s*phi} #h2 molecules/mum^2/s/Pa, from kd= Ks^2*kr relation
+
+# ---- Trapping ----
+Cu_nu0 = ${fparse Cu_D0/Cu_lam^2} # 1/s, jump rate prefactor [7]
+Cu_migration_energy = ${fparse Cu_Ed/R} #eV -> K, diffusion activation energy
+Cu_trapping_prefactor = '${units ${fparse 1 * ${Cu_nu0}} 1/s}' # Appendix B [6] to be consistent with W, note that [7] lists this value as 48*Cu_D0/lam^2
+Cu_detrapping_prefactor = '${units ${NU} 1/s}'  # chosen for consistency with W, note that [7] lists this value 8*Cu_D0/lam^2, which is on the same order of magnitude
+
+#Trap 1
+Cu_trap_binding_energy_eV_1 = 0.26           # trap energy in eV assuming 1 H per trap [14]
+Cu_detrapping_energy_eV_1 = ${fparse Cu_trap_binding_energy_eV_1 + Cu_Ed_eV} # eV
+Cu_detrapping_energy_1 = '${units ${fparse Cu_detrapping_energy_eV_1/KB_EV} K}' #eV -> K
+Cu_trapping_site_fraction_1 = 0.00044 # --, trapping site fraction [15]
+
+# --------------------------------------------------------------------------------------
+# REFERENCES
+# [1] Y. Xingang and G. Fujun, "Molecular dynamics study on the diffusion properties of hydrogen atoms in bulk tungsten," Plasma Sci. Technol., vol. 15, no. 7, p. 710, 2013, doi: 10.1088/1009-0630/15/7/19.
+# [2] K. Wang and R. R. Reeber, "Thermal expansion of copper," High Temp. Mater. Sci., vol. 35, no. 2, 1996.
+# [3] X. Kong et al., "First-principles calculations of hydrogen solution and diffusion in tungsten: Temperature and defect-trapping effects," Acta Mater., vol. 84, pp. 426–435, 2015, doi: 10.1016/j.actamat.2014.10.039.
+# [4] R. A. Causey and T. J. Venhaus, "The use of tungsten in fusion reactors: A review of the hydrogen retention and migration properties," Phys. Scr., vol. T94, p. 9, 2001, doi: 10.1238/Physica.Topical.094a00009.
+# [5] A. Alivaliollahi, Gh. Alahyarizadeh, and A. Minuchehr, "Hydrogen interaction with vacancy defects in tungsten: Unraveling the influence on diffusion mechanisms and mechanical properties," Int. J. Hydrogen Energy, vol. 57, pp. 889–903, Feb. 2024, doi: 10.1016/j.ijhydene.2024.01.114.
+# [6] J. Ambrosek and G. R. Longhurst, Verification and Validation of TMAP7, Technical Report INEEL/EXT-04-01657, Rev. 2, Idaho National Engineering and Environmental Laboratory, Idaho Falls, ID, USA, Dec. 2008.
+# [7] W. R. Wampler, T. Schober, and B. Lengeler, "Precipitation and trapping of hydrogen in copper," Philosophical Magazine, vol. 34, no. 1, pp. 129–141, 1976, doi: 10.1080/14786437608228179.
+# [8] E. A. Hodille, Y. Ferro, N. Fernandez, C. S. Becquart, T. Angot, J. M. Layet, R. Bisson, and C. Grisolia, "Study of hydrogen isotopes behavior in tungsten by a multi trapping macroscopic rate equation model," Physica Scripta, vol. 2016, no. T167, p. 014011, 2016, doi: 10.1088/0031-8949/2016/T167/014011.
+# [9] J. Dark, R. Delaporte-Mathurin, T. Schwarz-Selinger, E. A. Hodille, J. Mougenot, Y. Charles, and C. Grisolia, "Modelling neutron damage effects on tritium transport in tungsten," Nucl. Fusion, vol. 64, no. 8, p. 086026, 2024, doi: 10.1088/1741-4326/ad56a0. 
+# [10] C. García-Rosales, P. Franzen, H. Plank, J. Roth, and E. Gauthier, "Re-emission and thermal desorption of deuterium from plasma sprayed tungsten coatings for application in ASDEX-Upgrade," J. Nucl. Mater., vol. 233–237, pp. 803–808, 1996, doi: 10.1016/S0022-3115(96)00185-7.
+# [11] H. Magnusson and K. Frisk, "Diffusion, permeation and solubility of hydrogen in copper," J. Phase Equilib. Diffus., vol. 38, no. 1, pp. 65–69, 2017, doi: 10.1007/s11669-017-0518-y.
+# [12] M. A. Pick and K. Sonnenberg, "A model for atomic hydrogen-metal interactions—Application to recycling, recombination and permeation," Journal of Nuclear Materials, vol. 131, pp. 208–220, 1985, doi: 10.1016/0022-3115(85)90459-3.
+# [13] S. B. Donald and I. Harrison, "Rice–Ramsperger–Kassel–Marcus Simulation of Hydrogen Dissociation on Cu(111): Addressing Dynamical Biases, Surface Temperature, and Tunneling," Journal of Physical Chemistry C, vol. 118, pp. 320–337, 2014, doi: 10.1021/jp408714s.
+# [14] M. Wei, P. Zhang, Y. Feng, S. Sun, G. Wang, and Y. Wang, "First-principles investigation of the trapping mechanism of hydrogen in copper alloys from surface to vacancy," Int. J. Hydrogen Energy, vol. 138, pp. 206–214, 2025, doi: 10.1016/j.ijhydene.2025.05.159.
+# [15] G. Neumann, V. Tölle, and C. Tuijn, "Monovacancies and divacancies in copper: Reanalysis of experimental data," Physica B: Condensed Matter, vol. 271, no. 1–4, pp. 21–27, 1999, doi: 10.1016/S0921-4526(99)00209-4.
