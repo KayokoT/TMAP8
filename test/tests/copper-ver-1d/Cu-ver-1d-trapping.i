@@ -4,16 +4,17 @@
 
 # Modeling parameters
 node_num = 2000
-end_time = 3 #s
+end_time = 1 #s
+trap_per_free = 1e3
 # Trapping parameters
 
-!include tungsten.params
+!include copper.params
 
 [Mesh]
   type = GeneratedMesh
   dim = 1
   nx = ${node_num}
-  xmax = ${W_thickness}
+  xmax = ${Cu_thickness}
 []
 
 [Problem]
@@ -44,9 +45,9 @@ end_time = 3 #s
   [empty_sites]
     variable = empty_sites
     type = EmptySitesAux
-    N = '${fparse W_lattice_density / cl}'
-    Ct0 = ${W_trapping_fraction}
-    trap_per_free = ${W_trap_per_free}
+    N = '${fparse Cu_lattice_density / cl}'
+    Ct0 = ${Cu_trapping_fraction}
+    trap_per_free = ${trap_per_free}
     trapped_concentration_variables = trapped
   []
   [scaled_empty]
@@ -58,7 +59,7 @@ end_time = 3 #s
   [trapped_sites]
     variable = trapped_sites
     type = NormalizationAux
-    normal_factor = ${W_trap_per_free}
+    normal_factor = ${trap_per_free}
     source_variable = trapped
   []
   [total_sites]
@@ -73,7 +74,7 @@ end_time = 3 #s
   [diff]
     type = ADMatDiffusion
     variable = mobile
-    diffusivity = ${W_D}
+    diffusivity = ${Cu_D}
     extra_vector_tags = ref
   []
   [time]
@@ -85,7 +86,7 @@ end_time = 3 #s
     type = ADScaledCoupledTimeDerivative
     variable = mobile
     v = trapped
-    factor = ${W_trap_per_free}
+    mat_prop = ${trap_per_free}
     extra_vector_tags = ref
   []
 []
@@ -98,19 +99,19 @@ end_time = 3 #s
   [trapping]
     type = TrappingNodalKernel
     variable = trapped
-    alpha_t = ${W_trapping_prefactor}
-    N = '${fparse W_lattice_density / cl}'
-    Ct0 = ${W_trapping_fraction}
+    alpha_t = ${Cu_trapping_prefactor}
+    N = '${fparse Cu_lattice_density / cl}'
+    Ct0 = ${Cu_trapping_fraction}
     mobile_concentration = 'mobile'
     temperature = ${T}
-    trap_per_free = ${W_trap_per_free}
+    trap_per_free = ${trap_per_free}
     extra_vector_tags = ref
   []
   [release]
     type = ReleasingNodalKernel
-    alpha_r = ${release_prefactor}
+    alpha_r = ${Cu_release_prefactor}
     temperature = ${T}
-    detrapping_energy = ${W_epsilon}
+    detrapping_energy = ${Cu_epsilon}
     variable = trapped
   []
 []
@@ -140,7 +141,7 @@ end_time = 3 #s
   [outflux]
     type = SideDiffusiveFluxAverage
     boundary = 'right'
-    diffusivity = ${W_D}
+    diffusivity = ${Cu_D}
     variable = mobile
   []
   [scaled_outflux]
@@ -165,26 +166,27 @@ end_time = 3 #s
 [Executioner]
   type = Transient
   end_time = ${end_time}
-  dtmax = 1e-3
   solve_type = NEWTON
   scheme = BDF2
-  petsc_options = '-pc_svd_monitor'
-  petsc_options_iname = '-pc_type'
-  petsc_options_value = 'svd'
+  # petsc_options = '-pc_svd_monitor'
   # petsc_options_iname = '-pc_type'
-  # petsc_options_value = 'lu'
+  # petsc_options_value = 'svd'
+  petsc_options_iname = '-pc_type'
+  petsc_options_value = 'lu'
   line_search = 'none'
+  automatic_scaling = true
+  compute_scaling_once = false
   [TimeStepper]
     type = IterationAdaptiveDT
-    dt = 1e-7
+    dt = 1e-5
     optimal_iterations = 6
-    growth_factor = 1.1
-    cutback_factor = 0.909
+    growth_factor = 1.05
+    cutback_factor = 0.90
   []
 []
 
 [Outputs]
-  exodus = false
+  exodus = true
   csv = true
   [dof]
     type = DOFMap

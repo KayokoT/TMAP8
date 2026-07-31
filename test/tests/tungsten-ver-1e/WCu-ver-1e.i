@@ -5,7 +5,7 @@
 # Numerical parameters
 nx_num = 2000 # -
 simulation_time = ${units 0.2 s}
-
+Na = 6.022e23
 T_Cu = ${units 50 mum -> m} #Cu layer thickness
 T_W = ${units 25 mum -> m} #W layer thickness
 D_ver = ${units 24 mum -> m} #probe in W layer
@@ -13,7 +13,7 @@ D_ver_Cu = ${units 49 mum -> m} #probe in Cu layer
 Diffusivity_Cu = ${units 5.9968958217e-8 m^2/s} #at 1500K
 Diffusivity_W = ${units 2.72e-8 m^2/s} #at 1500K
 length_Cu = ${units 50 mum -> m}
-initial_concentration = ${units 50.7079 mol/m^3} #default value 50.7079
+initial_concentration = ${units 6.54385371546623e24 at/m^3} #6.54385371546623e24 
 
 [Mesh]
   type = GeneratedMesh
@@ -50,16 +50,23 @@ initial_concentration = ${units 50.7079 mol/m^3} #default value 50.7079
 
 [BCs]
   [left]
-    type = DirichletBC
+    type = FunctionDirichletBC
     variable = u
+    function = 'BC_func'
     boundary = left
-    value = ${initial_concentration}
   []
   [right]
     type = DirichletBC
     variable = u
     boundary = right
     value = 0
+  []
+[]
+
+[Functions]
+  [BC_func]
+    type = ParsedFunction
+    expression = 'tanh(1e10 * t)' #ramps up to 1
   []
 []
 
@@ -85,6 +92,11 @@ initial_concentration = ${units 50.7079 mol/m^3} #default value 50.7079
     point = '${fparse ${T_Cu} + ${D_ver}} 0 0'
     outputs = 'csv'
   []
+  [scaled_concentration_at_x_W] #puts it in at/m^3
+    type = ScalePostprocessor
+    value = concentration_at_x_W
+    scaling_factor = ${fparse ${initial_concentration} / ${Na}}
+  []
   [concentration_at_x_Cu]
     type = PointValue
     variable = u
@@ -104,7 +116,9 @@ initial_concentration = ${units 50.7079 mol/m^3} #default value 50.7079
   nl_rel_tol = 1e-50 # Make this really tight so that our absolute tolerance criterion is the one
   # we must meet
   nl_abs_tol = 1e-12
-  abort_on_solve_fail = true
+  abort_on_solve_fail = false
+  automatic_scaling = true
+  compute_scaling_once = false
   [TimeStepper]
     type = IterationAdaptiveDT
     dt = 1e-5

@@ -1,0 +1,73 @@
+# Parameters to solve systems with tungsten and metal substrates
+
+# CONSTANTS
+kb = 8.617333262e-5    #eV/K Boltzmann's constant
+nu = 1e13              #s^-1, Debye frequency
+R = 8.31446261815324   #J/molK, gas constant
+
+# GEOMETRY
+W_thickness = '${units 2.5e-5 m} '
+Cu_thickness = '${units 5e-5 m}'
+
+# TEMPERATURE
+T = 1500 #K
+
+# TEMP DEPENDENT LATTICE CONSTANT
+W_lam = 3.198e-10  #m, lattice constant 
+# K   W_lam (*e-10) [1, Table 1]
+# 0    3.177
+# 300  3.180
+# 600  3.184
+# 900  3.189
+# 1200 3.193
+# 1500 3.198
+
+Cu_lam = '${fparse 1e-10*(3.602472 + 6.99e-6*T + 1.45e-7*T^2)}'  #m, lattice constant [7] 
+
+
+# HYDROGEN DIFFUSION AND TRAPPING IN TUNGSTEN
+W_D0 = 7.44e-8                  #m^2/s, diffusivity pre-exponential [1]
+W_Ed = 0.13                                      #eV, diffusion activation energy [1] but [3] says differently?
+W_D = '${units ${fparse W_D0*exp(-W_Ed/(kb*T))} m^2/s}' #diffusivity
+
+W_S0 = 3.2651 #solubility pre-exponential [1]
+W_Hsoln = 1.25 #eV, heat of solution [1]
+W_S = '${units ${fparse W_S0*exp(-W_Hsoln/(kb*T))} mol/m^3/Pa }' #solubility
+
+W_lattice_density = '${units ${fparse 2/(W_lam^3)} at/m^3 }' #since BCC, so 2 atoms per unit cell
+W_trapping_energy = 1                                    #trap energy in eV, natural traps are 0.5-0.85, vacancies are 1.2-1.5 [3]
+W_epsilon= '${units ${fparse W_trapping_energy/kb} K}'          #trap energy in K
+cl = '${units ${fparse ${W_lattice_density}*1e-4} at/m^3}'                 #mobile hydrogen concentration 
+c = 1e-4                                                    #-, dissolved gas atom fraction
+W_trapping_fraction = 0.01                                  #-, trapping site fraction [4]
+W_trap_per_free = 1e3
+W_trapping_prefactor = '${units ${fparse W_D/W_lam^2} 1/s}'      #Appendix B [2]
+release_prefactor = '${units 1e13 1/s}'
+
+# HYDROGEN DIFFUSION AND TRAPPING IN COPPER
+Cu_D0 = 1.74e-6                    #m^2/s, diffusivity pre-exponential [6]
+Cu_Ed = 42000                                     #J/mol, activation energy [6]
+Cu_D = '${units ${fparse Cu_D0*exp(-Cu_Ed/(R*T))} m^2/s}' #diffusivity [6]
+
+Cu_S0 = 5.8e-3 #solubility pre-exponential [6]
+Cu_Hsoln = 48660 #J/mol, heat of solution [6]
+Cu_S = '${units ${fparse Cu_S0*exp(-Cu_Hsoln/(R*T))} mol/m^3/Pa}' #solubility [6]
+
+Cu_lattice_density = '${units ${fparse 4/(Cu_lam^3)} at/m^3}'       #since FCC, so 4 atoms per unit cell
+Cu_trapping_energy = 0.26                               #trap energy in eV assuming 1 H per trap [8]
+Cu_epsilon= '${units ${fparse Cu_trapping_energy/kb} K}'   #trap energy in K
+Cu_trapping_fraction = 0.01                             #-, trapping site fraction
+Cu_trap_per_free = 1e3
+Cu_trapping_prefactor = '${units ${fparse ${Cu_D}/Cu_lam^2} 1/s}'  
+            
+
+
+# REFERENCES
+# [1] Kong, X., et al. First-principles calculations of hydrogen solution and diffusion in tungsten: Temperature and defect-trapping effects. Acta Materialia., v. 84, pp. 426-435. 2015. doi.org/10.1016/j.actamat.2014.10.039
+# [2] Ambrosek, J., & Ambrosek, J. Verification and Validation of TMAP7. Idaho National Laboratory. p. 469. 2008.
+# [3] Alivaliollahi, et al. “Hydrogen interaction with vacancy defects in tungsten: Unraveling the influence on diffusion mechanisms and mechanical properties.” Int. J. Hyd. En., v. 57, pp. 889-903, 2024.
+# [4] Roth, J.; Schmid, K. “Hydrogen in tungsten as plasma-facing material” Phys. Scr., v. T145, pp. 014031, 2011. 
+# [5] Silva-Solis, et al. "Hydrogen transport at metallic interfaces: Modeling the tungsten-copper system." Phys. Rev. Materials, v. 10, 045404, 2026.
+# [6] Magnusson, H., Frisk, K. “Diffusion, Permeation and Solubility of Hydrogen in Copper.” v. 38, pp. 65-69. 2017. https://doi.org/10.1007/s11669-017-0518-y
+# [7] Shah, Jayantkumar Shantilal, "Thermal lattice expansion of various types of solids" (1971). Doctoral Dissertations. 2312. https://scholarsmine.mst.edu/doctoral_dissertations/2312  
+# [8] Wei, M., Zhang P., et al. "First-Principles Investigation of the Trapping Mechanism of Hydrogen in Copper Alloys from Surface to Vacancy." International Journal of Hydrogen Energy, 2025. https://doi.org/10.1016/j.ijhydene.2025.05.159

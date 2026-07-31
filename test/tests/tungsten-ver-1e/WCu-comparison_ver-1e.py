@@ -30,13 +30,14 @@ csv_folder = "./WCu-ver-1e_csv.csv"
 tmap_sol = pd.read_csv(csv_folder)
 
 tmap_time = tmap_sol["time"]
-tmap_conc_W = tmap_sol["concentration_at_x_W"]
+tmap_conc_W = tmap_sol["scaled_concentration_at_x_W"]
 
 ax.plot(tmap_time, tmap_conc_W, label=r"TMAP8-W", c="k")
 
 # Analytical parameters
 t0 = 0.2 #time offset to avoid singularities
-c0 = 50.7079  # concentration at the Cu free surface (moles/m^3)
+Na = 6.022e23
+c0 = 6.54385371546623e24/Na #mol/m^3)
 a = 5e-5  # thickness of the Cu layer (m)
 D_Cu = 5.9968958217e-8  # diffusivity in Cu (m^2/s)
 D_W = 2.72e-8  # diffusivity in W (m^2/s)
@@ -90,7 +91,7 @@ ax.plot(
 )
 
 ax.set_xlabel("Time (s)")
-ax.set_ylabel(r"Concentration (moles/m$^3$)")
+ax.set_ylabel(r"Concentration (at/m$^3$)")
 ax.legend(loc="best")
 ax.set_xlim(left = 0, right = xmax1)
 ax.set_ylim(bottom = 0, top = ymax1)
@@ -118,7 +119,7 @@ ax.plot(
 xmax2 = 0.008
 ymax2 = 1.2
 ax.set_xlabel("Time (s)")
-ax.set_ylabel(r"Concentration (moles/m$^3$)")
+ax.set_ylabel(r"Concentration (at/m$^3$)")
 ax.legend(loc="best")
 ax.set_xlim(0, xmax2)
 ax.set_ylim(-0.2, ymax2)
